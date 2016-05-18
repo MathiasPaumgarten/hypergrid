@@ -2,8 +2,8 @@ var gulp       = require( "gulp" );
 var babelify   = require( "babelify" );
 var browserify = require( "browserify" );
 var connect    = require( "gulp-connect" );
-var jade       = require( "gulp-jade" );
-var minifyCSS  = require( "gulp-minify-css" );
+var pug        = require( "gulp-pug" );
+var cssnano    = require( "gulp-cssnano" );
 var compass    = require( "gulp-compass" );
 var source     = require( "vinyl-source-stream" );
 var buffer     = require( "vinyl-buffer" );
@@ -39,15 +39,15 @@ gulp.task( "assets", function() {
         .pipe( gulp.dest( "public" ) );
 } );
 
-gulp.task( "jade", function() {
-    gulp.src( "jade/*.jade" )
-        .pipe( jade() )
+gulp.task( "pug", function() {
+    gulp.src( "pug/*.pug" )
+        .pipe( pug() )
         .pipe( gulp.dest( "public" ) );
 } );
 
 gulp.task( "watch", function() {
     gulp.watch( "javascript/**/*.js", [ "scripts" ] );
-    gulp.watch( "jade/**/*.jade", [ "jade" ] );
+    gulp.watch( "pug/**/*.pug", [ "pug" ] );
     gulp.watch( "scss/**/*.scss", [ "scss" ] );
     gulp.watch( "assets/**", [ "assets" ] );
 } );
@@ -59,8 +59,8 @@ gulp.task( "scss", function() {
             sass: "scss",
         } ) )
         .on( "error", onError )
-        .pipe( minifyCSS() )
+        .pipe( cssnano() )
         .pipe( gulp.dest( "public/stylesheets" ) );
 } );
 
-gulp.task( "default", [ "scripts", "jade", "scss", "watch", "connect" ] );
+gulp.task( "default", [ "scripts", "pug", "scss", "watch", "connect" ] );

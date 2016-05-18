@@ -4,7 +4,7 @@ var data;
 var size = 0;
 var orientation = cube.orientation;
 
-exports.init = function ( length ) {
+exports.init = function ( length, scene ) {
 
     const offset = - Math.floor( length / 2 );
 
@@ -24,7 +24,7 @@ exports.init = function ( length ) {
 
             for ( z = 0; z < size; z++ ) {
 
-                var object = data[ x ][ y ][ z ] = cube( index++ );
+                var object = data[ x ][ y ][ z ] = cube( index++, scene );
 
                 object.setPosition(
                     ( offset + x ) * cube.WIDTH,
@@ -40,6 +40,9 @@ exports.init = function ( length ) {
     for ( z = 0; z < size; z++ ) {
 
         var neighbors = [];
+
+        // More assignments than necessary. Ideally I have a better
+        // system but let's not waste time for now.
 
         neighbors[ orientation.FRONT ]               = getSafe( x,     y,     z + 1 );
         neighbors[ orientation.FRONT_TOP ]           = getSafe( x,     y + 1, z + 1 );

@@ -25,43 +25,43 @@ const orientation = {
 
     LEFT: 18,
     LEFT_TOP: 19,
-    LEFT_TOP_RIGHT: 20,
-    LEFT_RIGHT: 21,
-    LEFT_BOTTOM_RIGHT: 22,
-    LEFT_BOTTOM: 23,
-    LEFT_BOTTOM_LEFT: 24,
-    LEFT_LEFT: 25,
-    LEFT_TOP_LEFT: 26,
+    LEFT_TOP_RIGHT: 8,
+    LEFT_RIGHT: 7,
+    LEFT_BOTTOM_RIGHT: 6,
+    LEFT_BOTTOM: 20,
+    LEFT_BOTTOM_LEFT: 15,
+    LEFT_LEFT: 16,
+    LEFT_TOP_LEFT: 17,
 
-    RIGHT:  27,
-    RIGHT_TOP: 28,
-    RIGHT_TOP_RIGHT: 29,
-    RIGHT_RIGHT: 30,
-    RIGHT_BOTTOM_RIGHT: 31,
-    RIGHT_BOTTOM: 32,
-    RIGHT_BOTTOM_LEFT: 33,
-    RIGHT_LEFT: 34,
-    RIGHT_TOP_LEFT: 35,
+    RIGHT:  21,
+    RIGHT_TOP: 22,
+    RIGHT_TOP_RIGHT: 11,
+    RIGHT_RIGHT: 12,
+    RIGHT_BOTTOM_RIGHT: 13,
+    RIGHT_BOTTOM: 23,
+    RIGHT_BOTTOM_LEFT: 4,
+    RIGHT_LEFT: 3,
+    RIGHT_TOP_LEFT: 2,
 
-    TOP: 36,
-    TOP_TOP: 37,
-    TOP_TOP_RIGHT: 38,
-    TOP_RIGHT: 39,
-    TOP_BOTTOM_RIGHT: 40,
-    TOP_BOTTOM: 41,
-    TOP_BOTTOM_LEFT: 42,
-    TOP_LEFT: 43,
-    TOP_TOP_LEFT: 44,
+    TOP: 24,
+    TOP_TOP: 10,
+    TOP_TOP_RIGHT: 11,
+    TOP_RIGHT: 22,
+    TOP_BOTTOM_RIGHT: 2,
+    TOP_BOTTOM: 1,
+    TOP_BOTTOM_LEFT: 8,
+    TOP_LEFT: 19,
+    TOP_TOP_LEFT: 17,
 
-    BOTTOM: 45,
-    BOTTOM_TOP: 46,
-    BOTTOM_TOP_RIGHT: 47,
-    BOTTOM_RIGHT: 48,
-    BOTTOM_BOTTOM_RIGHT: 49,
-    BOTTOM_BOTTOM: 50,
-    BOTTOM_BOTTOM_LEFT: 51,
-    BOTTOM_LEFT: 52,
-    BOTTOM_TOP_LEFT: 53
+    BOTTOM: 25,
+    BOTTOM_TOP: 14,
+    BOTTOM_TOP_RIGHT: 13,
+    BOTTOM_RIGHT: 23,
+    BOTTOM_BOTTOM_RIGHT: 4,
+    BOTTOM_BOTTOM: 5,
+    BOTTOM_BOTTOM_LEFT: 6,
+    BOTTOM_LEFT: 20,
+    BOTTOM_TOP_LEFT: 15
 };
 
 const DIRECTIONS = Object.keys( orientation );
@@ -72,7 +72,7 @@ const OPPOSITE = {
     "LEFT": "RIGHT",
     "RIGHT": "LEFT",
     "FRONT": "BACK",
-    "BACK": "FONT"
+    "BACK": "FRONT"
 };
 
 Object.freeze( orientation );
@@ -82,11 +82,18 @@ Object.freeze( OPPOSITE );
 var geometry = new THREE.CubeGeometry( WIDTH, WIDTH , WIDTH );
 var material = new THREE.MeshLambertMaterial( { color: 0x2194ce } );
 
-module.exports = function( /* id */ ) {
+function clamp( value, min, max ) {
+    return Math.min( max, Math.max( min, value ) );
+}
+
+module.exports = function( id, scene ) {
     var cube = {};
     var neighbors;
     var mainNeighbors;
     var isShown = false;
+    var forceRound = false;
+    var t = 0;
+    var growFactor = 0.08;
 
     cube.mesh = new THREE.Mesh( geometry, material );
 
@@ -94,18 +101,32 @@ module.exports = function( /* id */ ) {
         cube.mesh.position.set( x, y, z );
     };
 
-    cube.add = function( scene ) {
+    cube.add = function() {
         scene.add( cube.mesh );
+
+        forceRound = true;
         isShown = true;
+
+        if ( growFactor < 0 ) growFactor *= -1;
     };
 
-    cube.remove = function( scene ) {
-        scene.remove( cube.mesh );
-        isShown = false;
+    cube.remove = function() {
+        forceRound = true;
+
+        if ( growFactor > 0 ) growFactor *= -1;
     };
 
     cube.update = function() {
-        if ( ! isShown ) return;
+        if ( ! forceRound && ! isShown ) return;
+
+        t = clamp( t + growFactor, 0, 1 );
+
+        cube.mesh.scale.set( t, t, t );
+
+        if ( t < Math.abs( growFactor ) ) {
+            isShown = false;
+            scene.remove( cube.mesh );
+        }
     };
 
     cube.setNeighbors = function( value ) {
@@ -116,22 +137,21 @@ module.exports = function( /* id */ ) {
             .filter( x => x.cube !== null );
     };
 
-    cube.isAvailable = function() {
-        return ! isShown;
+    cube.isShown = function() {
+        return isShown;
     };
 
     cube.isFree = function( from ) {
         if ( isShown ) return false;
 
-        var ignorables = [];
+        var ignorableIndices = [];
         var i, direction, neighbor;
 
         for ( i = 0; i < DIRECTIONS_LENGTH; i++ ) {
             direction = DIRECTIONS[ i ];
 
             if ( direction.substr( 0, from.length ) === from ) {
-                neighbor = getNeighborByName( direction );
-                if ( neighbor ) ignorables.push( neighbor );
+                ignorableIndices.push( orientation[ direction ] );
             }
         }
 
@@ -139,9 +159,8 @@ module.exports = function( /* id */ ) {
 
             neighbor = getNeighborByName( DIRECTIONS[ i ] );
 
-            if ( ignorables.indexOf( neighbor ) > -1 ) continue;
-
-            if ( neighbor && ! neighbor.isAvailable() ) return false;
+            if ( ignorableIndices.indexOf( orientation[ DIRECTIONS[ i ] ] ) > -1 ) continue;
+            if ( neighbor && neighbor.isShown() ) return false;
         }
 
         return true;
@@ -164,6 +183,22 @@ module.exports = function( /* id */ ) {
 
         return null;
     };
+
+    cube.getConnections = function() {
+        if ( ! isShown ) return [];
+
+        var neighbor;
+        var length = mainNeighbors.length;
+        var results = []
+
+        for ( i = 0; i < length; i++ ) {
+            neighbor = mainNeighbors[ i ].cube;
+
+            if ( neighbor.isShown() ) results.push( neighbor );
+        }
+
+        return results;
+    }
 
     function getNeighborByName( name ) {
         return neighbors[ orientation[ name ] ];

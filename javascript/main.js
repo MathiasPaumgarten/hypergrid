@@ -7,55 +7,129 @@ var camera;
 var renderer;
 var light;
 var controls;
-var currentCube;
+var currentGrowCube;
+var currentShrinkCube;
 var availableCubes = [];
+var shrinkableCubes = [];
+var isReducing = false;
 
 function init() {
     scene = new THREE.Scene();
 
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-    camera.position.z = 300;
+    var width = window.innerWidth;
+    var height = window.innerHeight;
+
+    // camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
+
+    camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
+    camera.position.set(
+        160,
+        160,
+        160
+    );
 
     controls = new OrbitControls( camera );
 
     light = new THREE.PointLight( 0xffffff, 1, 0 );
-    light.position.z = 300;
+    light.position.copy( camera.position );
 
     renderer = new THREE.WebGLRenderer( { canvas: document.getElementById( "canvas" ) } );
     renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setPixelRatio( window.devicePixelRatio ? window.devicePixelRatio : 1 );
 
     scene.add( light );
     scene.add( new THREE.AmbientLight( { color: 0xffffff } ) );
 
-    grid.init( 5 );
+    grid.init( 10, scene );
 
-    currentCube = grid.get( 0, 0, 0 );
+    currentGrowCube = grid.get( 0, 0, 0 );
+    shrinkCube = currentGrowCube;
 
-    scene.add( currentCube.mesh );
+    currentGrowCube.add( scene );
 
     step();
+    setTimeout( () => isReducing = true, 1000 );
 }
 
 function animate() {
     requestAnimationFrame( animate );
 
-    light.position.copy( camera.position );
     controls.update();
+    grid.onEach( "update" );
 
     renderer.render( scene, camera );
 }
 
 function step() {
-    var next = currentCube.getSuccessor();
+    var isComplete = grow();
 
-    if ( next ) {
-        next.add( scene );
-        availableCubes.push( currentCube );
-        currentCube = next;
+    isReducing && shrink();
 
-        setTimeout( step, 200 );
+    if ( ! isComplete ) {
+        setTimeout( step, 100 );
     }
 }
+
+function grow() {
+    var next = currentGrowCube.getSuccessor();
+
+    if ( next ) {
+
+        next.add( scene );
+        availableCubes.push( currentGrowCube );
+        currentGrowCube = next;
+
+        return false;
+
+    } else {
+
+        while ( availableCubes.length ) {
+            var subject = availableCubes.pop();
+
+            currentGrowCube = subject.getSuccessor();
+
+            if ( currentGrowCube ) {
+                currentGrowCube.add( scene );
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+function shrink() {
+    var index = availableCubes.indexOf( shrinkCube );
+    var connections = shrinkCube.getConnections();
+
+    if ( index > -1 ) {
+        availableCubes.splice( index, 1 );
+    }
+
+    shrinkCube.remove( scene );
+
+    if ( connections.length === 0 ) {
+
+        if ( shrinkableCubes.length === 0 ) {
+            console.log( "we're doneso" );
+            return;
+        }
+
+        shrinkCube = shrinkableCubes.shift();
+
+    } else if ( connections.length === 1 ) {
+
+        shrinkCube = connections[ 0 ];
+
+    } else {
+        shrinkCube = connections.shift();
+
+        do shrinkableCubes.push( connections.shift() );
+        while ( connections.length > 0 );
+    }
+
+}
+
 
 init();
 animate();
