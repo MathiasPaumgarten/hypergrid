@@ -1,5 +1,6 @@
 var THREE         = require( "three" );
 var OrbitControls = require( "three-orbit-controls" )( THREE );
+var remove        = require( "mout/array/remove" );
 var grid          = require( "./collections/grid" );
 
 var scene;
@@ -48,7 +49,7 @@ function init() {
     currentGrowCube.add( scene );
 
     step();
-    setTimeout( () => isReducing = true, 1000 );
+    setTimeout( () => isReducing = true, 7000 );
 }
 
 function animate() {
@@ -99,35 +100,49 @@ function grow() {
 }
 
 function shrink() {
-    var index = availableCubes.indexOf( shrinkCube );
-    var connections = shrinkCube.getConnections();
+    if ( ! shrinkCube ) return;
 
-    if ( index > -1 ) {
-        availableCubes.splice( index, 1 );
+    remove( availableCubes, shrinkCube );
+    remove( shrinkableCubes, shrinkCube );
+
+    if ( ! shrinkCube.isShown() ) {
+        shrinkCube = getNextShrinkCube( [] );
+        shrink();
+        return;
     }
 
     shrinkCube.remove( scene );
 
+    var connections = shrinkCube.getConnections();
+
+    shrinkCube = getNextShrinkCube( connections );
+}
+
+function getNextShrinkCube( connections ) {
+    var next;
+
     if ( connections.length === 0 ) {
 
-        if ( shrinkableCubes.length === 0 ) {
-            console.log( "we're doneso" );
-            return;
-        }
+        if ( shrinkableCubes.length < 0 ) return;
 
-        shrinkCube = shrinkableCubes.shift();
+        do {
+            next = shrinkableCubes.shift();
+        } while ( next && ! next.isShown() );
 
     } else if ( connections.length === 1 ) {
 
-        shrinkCube = connections[ 0 ];
+        next = connections[ 0 ];
 
     } else {
-        shrinkCube = connections.shift();
 
-        do shrinkableCubes.push( connections.shift() );
-        while ( connections.length > 0 );
+        next = connections.shift();
+
+        do {
+            shrinkableCubes.push( connections.shift() );
+        } while ( connections.length > 0 );
     }
 
+    return next;
 }
 
 
