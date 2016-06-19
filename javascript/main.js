@@ -2,6 +2,7 @@ var THREE         = require( "three" );
 var OrbitControls = require( "three-orbit-controls" )( THREE );
 var remove        = require( "mout/array/remove" );
 var grid          = require( "./collections/grid" );
+var thread        = require( "./workers/thread" );
 
 var scene;
 var camera;
@@ -12,7 +13,6 @@ var currentGrowCube;
 var currentShrinkCube;
 var availableCubes = [];
 var shrinkableCubes = [];
-var isReducing = false;
 
 function init() {
     scene = new THREE.Scene();
@@ -20,14 +20,10 @@ function init() {
     var width = window.innerWidth;
     var height = window.innerHeight;
 
-    // camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
+    camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
 
-    camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
-    camera.position.set(
-        160,
-        160,
-        160
-    );
+    // camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
+    camera.position.set( 160, 160, 160 );
 
     controls = new OrbitControls( camera );
 
@@ -43,79 +39,48 @@ function init() {
 
     grid.init( 10, scene );
 
-    currentGrowCube = grid.get( 0, 0, 0 );
-    shrinkCube = currentGrowCube;
+    currentShrinkCube = currentGrowCube;
 
-    currentGrowCube.add( scene );
+    thread( grid.get( 0, 0, 0 ) );
+    thread( grid.get( 9, 9, 9 ) );
 
-    step();
-    setTimeout( () => isReducing = true, 7000 );
+    window.addEventListener( "resize", onResize );
+}
+
+function onResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
 function animate() {
     requestAnimationFrame( animate );
 
     controls.update();
+    light.position.copy( camera.position );
     grid.onEach( "update" );
 
     renderer.render( scene, camera );
 }
 
-function step() {
-    var isComplete = grow();
-
-    isReducing && shrink();
-
-    if ( ! isComplete ) {
-        setTimeout( step, 100 );
-    }
-}
-
-function grow() {
-    var next = currentGrowCube.getSuccessor();
-
-    if ( next ) {
-
-        next.add( scene );
-        availableCubes.push( currentGrowCube );
-        currentGrowCube = next;
-
-        return false;
-
-    } else {
-
-        while ( availableCubes.length ) {
-            var subject = availableCubes.pop();
-
-            currentGrowCube = subject.getSuccessor();
-
-            if ( currentGrowCube ) {
-                currentGrowCube.add( scene );
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 function shrink() {
-    if ( ! shrinkCube ) return;
+    if ( ! currentShrinkCube ) return;
 
-    remove( availableCubes, shrinkCube );
-    remove( shrinkableCubes, shrinkCube );
+    remove( availableCubes, currentShrinkCube );
+    remove( shrinkableCubes, currentShrinkCube );
 
-    if ( ! shrinkCube.isShown() ) {
-        shrinkCube = getNextShrinkCube( [] );
+    if ( ! currentShrinkCube.isShown() ) {
+        currentShrinkCube = getNextShrinkCube( [] );
         shrink();
         return;
     }
 
-    shrinkCube.remove( scene );
+    currentShrinkCube.remove();
 
-    var connections = shrinkCube.getConnections();
+    var connections = currentShrinkCube.getConnections();
 
-    shrinkCube = getNextShrinkCube( connections );
+    currentShrinkCube = getNextShrinkCube( connections );
 }
 
 function getNextShrinkCube( connections ) {
@@ -125,9 +90,8 @@ function getNextShrinkCube( connections ) {
 
         if ( shrinkableCubes.length < 0 ) return;
 
-        do {
-            next = shrinkableCubes.shift();
-        } while ( next && ! next.isShown() );
+        do next = shrinkableCubes.shift();
+        while ( next && ! next.isShown() );
 
     } else if ( connections.length === 1 ) {
 
@@ -137,9 +101,8 @@ function getNextShrinkCube( connections ) {
 
         next = connections.shift();
 
-        do {
-            shrinkableCubes.push( connections.shift() );
-        } while ( connections.length > 0 );
+        do shrinkableCubes.unshift( connections.shift() );
+        while ( connections.length > 0 );
     }
 
     return next;
