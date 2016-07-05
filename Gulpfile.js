@@ -7,6 +7,7 @@ var cssnano    = require( "gulp-cssnano" );
 var compass    = require( "gulp-compass" );
 var source     = require( "vinyl-source-stream" );
 var buffer     = require( "vinyl-buffer" );
+var glslify    = require( "glslify" );
 
 function onError( error ) {
     console.log( error );
@@ -19,6 +20,7 @@ gulp.task( "scripts", function() {
             debug: true
         } )
         .transform( babelify, {} )
+        .transform( glslify, {} )
         .on( "error", onError );
 
     return bundler.bundle()
@@ -46,7 +48,7 @@ gulp.task( "pug", function() {
 } );
 
 gulp.task( "watch", function() {
-    gulp.watch( "javascript/**/*.js", [ "scripts" ] );
+    gulp.watch( "javascript/**", [ "scripts" ] );
     gulp.watch( "pug/**/*.pug", [ "pug" ] );
     gulp.watch( "scss/**/*.scss", [ "scss" ] );
     gulp.watch( "assets/**", [ "assets" ] );

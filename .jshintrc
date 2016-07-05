@@ -13,6 +13,7 @@
     "node"      : true,
     "maxlen"    : 150,
     "strict"    : false,
+    "esnext"    : true,
     "globals"   : {
         "console"   : true
     }

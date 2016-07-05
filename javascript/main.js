@@ -1,6 +1,5 @@
 var THREE         = require( "three" );
 var OrbitControls = require( "three-orbit-controls" )( THREE );
-var remove        = require( "mout/array/remove" );
 var grid          = require( "./collections/grid" );
 var thread        = require( "./workers/thread" );
 
@@ -9,10 +8,6 @@ var camera;
 var renderer;
 var light;
 var controls;
-var currentGrowCube;
-var currentShrinkCube;
-var availableCubes = [];
-var shrinkableCubes = [];
 
 function init() {
     scene = new THREE.Scene();
@@ -20,9 +15,9 @@ function init() {
     var width = window.innerWidth;
     var height = window.innerHeight;
 
-    camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
+    // camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
 
-    // camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
+    camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
     camera.position.set( 160, 160, 160 );
 
     controls = new OrbitControls( camera );
@@ -38,8 +33,6 @@ function init() {
     scene.add( new THREE.AmbientLight( { color: 0xffffff } ) );
 
     grid.init( 10, scene );
-
-    currentShrinkCube = currentGrowCube;
 
     thread( grid.get( 0, 0, 0 ) );
     thread( grid.get( 9, 9, 9 ) );
@@ -63,51 +56,6 @@ function animate() {
 
     renderer.render( scene, camera );
 }
-
-function shrink() {
-    if ( ! currentShrinkCube ) return;
-
-    remove( availableCubes, currentShrinkCube );
-    remove( shrinkableCubes, currentShrinkCube );
-
-    if ( ! currentShrinkCube.isShown() ) {
-        currentShrinkCube = getNextShrinkCube( [] );
-        shrink();
-        return;
-    }
-
-    currentShrinkCube.remove();
-
-    var connections = currentShrinkCube.getConnections();
-
-    currentShrinkCube = getNextShrinkCube( connections );
-}
-
-function getNextShrinkCube( connections ) {
-    var next;
-
-    if ( connections.length === 0 ) {
-
-        if ( shrinkableCubes.length < 0 ) return;
-
-        do next = shrinkableCubes.shift();
-        while ( next && ! next.isShown() );
-
-    } else if ( connections.length === 1 ) {
-
-        next = connections[ 0 ];
-
-    } else {
-
-        next = connections.shift();
-
-        do shrinkableCubes.unshift( connections.shift() );
-        while ( connections.length > 0 );
-    }
-
-    return next;
-}
-
 
 init();
 animate();

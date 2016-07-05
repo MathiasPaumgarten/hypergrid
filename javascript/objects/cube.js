@@ -1,5 +1,7 @@
-var THREE = require( "three" );
+var THREE   = require( "three" );
 var shuffle = require( "mout/array/shuffle" );
+var clamp   = require( "mout/math/clamp" );
+var shaders = require( "./shaders" );
 
 const WIDTH = 20;
 const orientation = {
@@ -80,11 +82,22 @@ Object.freeze( DIRECTIONS );
 Object.freeze( OPPOSITE );
 
 var geometry = new THREE.CubeGeometry( WIDTH, WIDTH , WIDTH );
-var material = new THREE.MeshLambertMaterial( { color: 0x2194ce } );
+var material = new THREE.ShaderMaterial( {
+    uniforms: {
+        resolution: {
+            type: "v2",
+            value: (
+                new THREE.Vector2(
+                    window.innerWidth,
+                    window.innerHeight
+                )
+            ).multiplyScalar( window.devicePixelRatio )
+        }
+    },
 
-function clamp( value, min, max ) {
-    return Math.min( max, Math.max( min, value ) );
-}
+    vertexShader: shaders.vertex,
+    fragmentShader: shaders.fragment
+} );
 
 module.exports = function( id, scene ) {
     var cube = {};
@@ -189,16 +202,16 @@ module.exports = function( id, scene ) {
 
         var neighbor;
         var length = mainNeighbors.length;
-        var results = []
+        var results = [];
 
-        for ( i = 0; i < length; i++ ) {
+        for ( var i = 0; i < length; i++ ) {
             neighbor = mainNeighbors[ i ].cube;
 
             if ( neighbor.isShown() ) results.push( neighbor );
         }
 
         return results;
-    }
+    };
 
     function getNeighborByName( name ) {
         return neighbors[ orientation[ name ] ];
