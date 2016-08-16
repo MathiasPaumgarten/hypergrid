@@ -8,6 +8,7 @@ var camera;
 var renderer;
 var light;
 var controls;
+var container;
 
 function init() {
     scene = new THREE.Scene();
@@ -17,22 +18,19 @@ function init() {
 
     // camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
 
-    camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
+    camera = new THREE.PerspectiveCamera( 75, width / height, 1, 500 );
     camera.position.set( 160, 160, 160 );
 
     controls = new OrbitControls( camera );
 
-    light = new THREE.PointLight( 0xffffff, 1, 0 );
-    light.position.copy( camera.position );
-
     renderer = new THREE.WebGLRenderer( { canvas: document.getElementById( "canvas" ) } );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.setPixelRatio( window.devicePixelRatio ? window.devicePixelRatio : 1 );
+    renderer.setClearColor( 0xFFFFFF, 1 );
 
-    scene.add( light );
-    scene.add( new THREE.AmbientLight( { color: 0xffffff } ) );
+    container = grid.init( 10, scene );
 
-    grid.init( 10, scene );
+    scene.add( container );
 
     thread( grid.get( 0, 0, 0 ) );
     thread( grid.get( 9, 9, 9 ) );
@@ -48,10 +46,13 @@ function onResize() {
 }
 
 function animate() {
+
+    container.rotation.y += 0.01;
+    container.rotation.x += 0.01;
+
     requestAnimationFrame( animate );
 
     controls.update();
-    light.position.copy( camera.position );
     grid.onEach( "update" );
 
     renderer.render( scene, camera );

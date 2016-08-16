@@ -1,3 +1,4 @@
+var THREE = require( "three" );
 var cube = require( "../objects/cube" );
 
 var data;
@@ -6,7 +7,8 @@ var orientation = cube.orientation;
 
 exports.init = function ( length, scene ) {
 
-    const offset = - Math.floor( length / 2 );
+    const offset = - ( length - 1 ) / 2;
+    const container = new THREE.Object3D();
 
     var x, y, z;
     var index = 0;
@@ -24,7 +26,7 @@ exports.init = function ( length, scene ) {
 
             for ( z = 0; z < size; z++ ) {
 
-                var object = data[ x ][ y ][ z ] = cube( index++, scene );
+                var object = data[ x ][ y ][ z ] = cube( index++, container );
 
                 object.setPosition(
                     ( offset + x ) * cube.WIDTH,
@@ -107,6 +109,8 @@ exports.init = function ( length, scene ) {
         data[ x ][ y ][ z ].setNeighbors( neighbors );
 
     }
+
+    return container;
 
 };
 

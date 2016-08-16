@@ -84,15 +84,8 @@ Object.freeze( OPPOSITE );
 var geometry = new THREE.CubeGeometry( WIDTH, WIDTH , WIDTH );
 var material = new THREE.ShaderMaterial( {
     uniforms: {
-        resolution: {
-            type: "v2",
-            value: (
-                new THREE.Vector2(
-                    window.innerWidth,
-                    window.innerHeight
-                )
-            ).multiplyScalar( window.devicePixelRatio )
-        }
+        density: { type: "f", value: window.devicePixelRatio },
+        time: { type: "i", value: Date.now() }
     },
 
     vertexShader: shaders.vertex,

@@ -32,7 +32,8 @@ gulp.task( "scripts", function() {
 
 gulp.task( "connect", function() {
     connect.server( {
-        root: "public"
+        root: "public",
+        port: 9876
     } );
 } );
 
