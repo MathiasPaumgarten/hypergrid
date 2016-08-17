@@ -1,7 +1,8 @@
 var THREE   = require( "three" );
 var shuffle = require( "mout/array/shuffle" );
 var clamp   = require( "mout/math/clamp" );
-var shaders = require( "./shaders" );
+var glslify = require( "glslify" );
+
 
 const WIDTH = 20;
 const orientation = {
@@ -88,8 +89,8 @@ var material = new THREE.ShaderMaterial( {
         time: { type: "i", value: Date.now() }
     },
 
-    vertexShader: shaders.vertex,
-    fragmentShader: shaders.fragment
+    vertexShader: glslify( __dirname + "/../shaders/vertex.glsl" ),
+    fragmentShader: glslify( __dirname + "/../shaders/fragment.glsl" )
 } );
 
 module.exports = function( id, scene ) {
