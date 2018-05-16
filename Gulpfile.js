@@ -3,8 +3,6 @@ var babelify   = require( "babelify" );
 var browserify = require( "browserify" );
 var connect    = require( "gulp-connect" );
 var pug        = require( "gulp-pug" );
-var cssnano    = require( "gulp-cssnano" );
-var compass    = require( "gulp-compass" );
 var source     = require( "vinyl-source-stream" );
 var buffer     = require( "vinyl-buffer" );
 var glslify    = require( "glslify" );
@@ -51,18 +49,12 @@ gulp.task( "pug", function() {
 gulp.task( "watch", function() {
     gulp.watch( "javascript/**", [ "scripts" ] );
     gulp.watch( "pug/**/*.pug", [ "pug" ] );
-    gulp.watch( "scss/**/*.scss", [ "scss" ] );
+    gulp.watch( "css/**/*.css", [ "css" ] );
     gulp.watch( "assets/**", [ "assets" ] );
 } );
 
-gulp.task( "scss", function() {
+gulp.task( "css", function() {
     gulp.src( "scss/*.scss" )
-        .pipe( compass( {
-            css: "public/stylesheets",
-            sass: "scss",
-        } ) )
-        .on( "error", onError )
-        .pipe( cssnano() )
         .pipe( gulp.dest( "public/stylesheets" ) );
 } );
 

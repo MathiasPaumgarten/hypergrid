@@ -16,17 +16,17 @@ function init() {
     var width = window.innerWidth;
     var height = window.innerHeight;
 
-    // camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
+    camera = new THREE.OrthographicCamera( width / - 2, width / 2, height / 2, height / - 2, 1, 1000 );
 
     camera = new THREE.PerspectiveCamera( 75, width / height, 1, 500 );
-    camera.position.set( 160, 160, 160 );
+    camera.position.set( 180, 180, 180 );
 
     controls = new OrbitControls( camera );
 
     renderer = new THREE.WebGLRenderer( { canvas: document.getElementById( "canvas" ) } );
     renderer.setSize( window.innerWidth, window.innerHeight );
     renderer.setPixelRatio( window.devicePixelRatio ? window.devicePixelRatio : 1 );
-    renderer.setClearColor( 0xFFFFFF, 1 );
+    renderer.setClearColor( 0xffffff, 1 );
 
     container = grid.init( 10, scene );
 

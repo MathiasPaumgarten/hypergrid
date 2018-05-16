@@ -1,6 +1,7 @@
 var remove  = require( "mout/array/remove" );
 
 module.exports = function( currentGrowCube ) {
+
     var thread = {};
     var availableCubes = [];
     var shrinkableCubes = [];
@@ -91,7 +92,7 @@ module.exports = function( currentGrowCube ) {
 
     step();
 
-    setTimeout( () => isShrinking = true, 1000 );
+    // setTimeout( () => isShrinking = true, 1000 );
 
     return thread;
 };
